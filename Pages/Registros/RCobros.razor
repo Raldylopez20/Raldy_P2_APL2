@@ -1,0 +1,242 @@
+﻿@page "/Cobros"
+@page "/Cobros/{cobroId:int}"
+
+@using Raldy_P2_APL2.Models
+@using Raldy_P2_APL2.BLL
+
+@inject IToastService Toast
+
+<EditForm Model="cobro" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+
+    <div class="card">
+
+        <div class="card-header">
+            <h3>Registro cobro</h3>
+        </div>
+
+        <div class="card-body">
+            <form>
+
+                @*Primera parte*@
+                <div class="form-group form-inline">
+                    <div class="form-group ">
+                        <label> Cobro Id </label>
+                        &nbsp;
+                        <div class="input-group">
+                            <InputNumber @bind-Value="cobro.CobroId" class="form-control col-6" />
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-primary input-group-text" @onclick="Buscar">
+                                    <i class="oi oi-magnifying-glass" />  Buscar
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(() => cobro.CobroId)" />
+                        </div>
+                    </div>
+
+                    <div class="form-group col-6">
+                        <label>Fecha</label>
+                        &nbsp;
+                        <div class="input-group">
+                            <InputDate @bind-Value="cobro.Fecha" class="form-control" />
+                            <ValidationMessage For="@(() => cobro.Fecha)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Cliente ID</label>
+                    <select @bind="cobro.ClienteId" class="form-control" @onblur="ObtenerVentasPendientes">
+                        <option value="0" disabled selected>Seleccione un cliente</option>
+                        @foreach (var item in ClienteList)
+                        {
+                            <option value="@item.ClienteId">@item.Nombres</option>
+                        }
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label>Facturas Pendientes</label>
+
+                    <div class="table-responsive text-nowrap" style="position: relative; height:200px; overflow: auto; display: block;">
+                        <table class="table table-striped">
+                            <thead style="background-color: gray;">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Monto</th>
+                                    <th>Balance</th>
+                                    <th>Cobrado</th>
+                                    <th>Pagar</th>
+
+                                </tr>
+                            </thead>
+                            <tbody style="background-color: white;">
+                                @foreach (var item in cobro.Detalle)
+                                {
+                                    <tr>
+                                        <td>@item.VentaId</td>
+                                        <td>@item.Venta.Fecha.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.Venta.Monto.ToString("N2")</td>
+                                        <td>@item.Venta.Balance.ToString("N2")</td>
+                                        <td>@item.Cobrado.ToString("N2")</td>
+                                        <td> <input type="checkbox" @onchange="@(() => Cobrar(item))" /> </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class=" form-group form-inline">
+                    <div class="form-group col-6">
+                        <label>Totales</label>
+                        &nbsp;
+                        <span class="form-control">@cobro.Detalle.Count()</span>
+                    </div>
+
+                    <div class="form-group col-6">
+                        <label>Total cobrado</label>
+                        &nbsp;
+                        <InputNumber @bind-Value="cobro.TotalCobrado" class="form-control" readOnly="true" />
+                        <ValidationMessage For="@(() => cobro.TotalCobrado)" />
+                    </div>
+                </div>
+
+                <div class="form-group ">
+                    <label>Observaciones</label>
+                    <textarea @bind="cobro.Observaciones" class="form-control" row="5" placeholder="Observaciones" />
+                </div>
+
+
+            </form>
+        </div>
+        @*Botones*@
+        <div class="card-footer">
+            <div class="form-group text-center" display: inline-block>
+                @* Boton Nuevo*@
+                <button type="button" class="btn btn-lg btn-primary" @onclick="Nuevo">
+                    <i class="oi oi-file mr-2" />Nuevo
+                </button>
+                @* Boton Guardar*@
+                <button type="submit" class="btn btn-lg btn-success">
+                    <i class="oi oi-account-login" style="transform:rotate(90deg)" />Guardar
+                </button>
+                @* Boton Eliminar*@
+                <button type="button" class="btn btn-lg btn-danger" @onclick="Eliminar">
+                    <i class="oi oi-trash mr-2" />Eliminar
+                </button>
+            </div>
+        </div>
+
+    </div>
+</EditForm>
+
+@code {
+    Cobros cobro = new Cobros();
+
+    List<Clientes> ClienteList = new List<Clientes>();
+
+    [Parameter]
+    public int cobroId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Nuevo();
+        await BuscarParametro();
+    }
+
+    private async Task BuscarParametro()
+    {
+        if (cobroId > 0)
+        {
+            var Cobro = CobrosBLL.Buscar(cobroId);
+
+            if (Cobro != null)
+            {
+                Cobro.Detalle = await VentasBLL.GetVentasCobradas(Cobro.ClienteId);
+                this.cobro = Cobro;
+            }
+            else
+                Toast.ShowError("El cobro no existe");
+        }
+    }
+
+    private void Nuevo()
+    {
+        cobro = new Cobros();
+        ClienteList = ClientesBLL.GetList(c => true);
+        cobro.Fecha = DateTime.Now;
+    }
+
+    private void Guardar()
+    {
+        bool guardado;
+        if (cobro.CobroId == 0)
+        {
+            cobro.Detalle.RemoveAll(d => d.Cobrado == 0);
+
+            guardado = CobrosBLL.Guardar(cobro);
+
+            if (guardado)
+            {
+                Toast.ShowSuccess("Guardado correctamente");
+                Nuevo();
+            }
+            else
+                Toast.ShowError("No se pudo guardar correctamente");
+        }
+        else
+            Toast.ShowWarning("No puede modificar el cobro");
+
+    }
+
+    private async Task Buscar()
+    {
+        var Cobro = CobrosBLL.Buscar(cobro.CobroId);
+
+        if (Cobro != null)
+        {
+            Cobro.Detalle = await VentasBLL.GetVentasCobradas(Cobro.ClienteId);
+            this.cobro = Cobro;
+        }
+        else
+            Toast.ShowError("El cobro no existe");
+    }
+
+    private void Eliminar()
+    {
+        bool elimino;
+
+        elimino = CobrosBLL.Eliminar(cobro.CobroId);
+
+        if (elimino)
+        {
+            Nuevo();
+            Toast.ShowSuccess("Eliminado correctamente");
+        }
+        else
+            Toast.ShowError("No fue posible eliminar");
+    }
+
+    private void Cobrar(CobrosDetalle cobroDetalle)
+    {
+        if (cobroDetalle.Cobrado == 0)
+        {
+            cobroDetalle.Cobrado = cobroDetalle.Venta.Balance;
+            cobro.TotalCobrado += cobroDetalle.Cobrado;
+        }
+        else
+        {
+            cobroDetalle.Cobrado = 0;
+            cobro.TotalCobrado -= cobroDetalle.Venta.Balance;
+        }
+    }
+
+    private async Task ObtenerVentasPendientes()
+    {
+        if (cobro.CobroId == 0)
+            cobro.Detalle = await VentasBLL.GetVentasPendiente(cobro.ClienteId);
+    }
+}

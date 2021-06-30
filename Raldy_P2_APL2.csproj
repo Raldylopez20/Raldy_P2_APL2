@@ -14,9 +14,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Pages\Consultas\" />
-    <Folder Include="Pages\Registros\" />
-  </ItemGroup>
-
 </Project>

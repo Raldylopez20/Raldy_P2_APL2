@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-
 namespace Raldy_P2_APL2.Models
 {
     public class CobrosDetalle
