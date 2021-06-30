@@ -2,7 +2,7 @@
 
 @using Raldy_P2_APL2.BLL
 @using Raldy_P2_APL2.Models
-@using Raldy_P2_APL2.Pages.Registro
+@using Raldy_P2_APL2.Pages.Registros
 
 @inject NavigationManager Nav
 @inject IJSRuntime Confirmacion
@@ -11,7 +11,7 @@
 
 <div class="card-img">
     <div class="card-header">
-        <h1>Consulta de Cobros</h1>
+        <h1>CONSULTA DE COBROS</h1>
     </div>
 
     <div class="card-body">
@@ -85,17 +85,126 @@
                                     <a type="button" href="@($"Cobros/{item.CobroId}")" class="btn btn-warning oi oi-pencil"></a>
                                 </td>
 
-
-                                @*<td>
-                                        <button @onclick="() => Editar(item.CobroId)" class="btn btn-warning oi oi-pencil"></button>
-                                        <button @onclick="() => Eliminar(item.CobroId)" class="btn btn-danger oi oi-trash"></button>
-                                    </td>*@
-
                             </tr>
                         }
+
+
                     </tbody>
                 </table>
             </div>
         </form>
     </div>
 </div>
+
+@************************************************************************************************************************************************@
+
+@code
+{
+    public List<Cobros> CobroList { get; set; }
+
+    public List<Cobros> Cobros { get; set; }
+
+    private DateTime Desde { get; set; } = DateTime.Now;
+    private DateTime Hasta { get; set; } = DateTime.Now;
+
+    public string Filtro { get; set; }
+    private string FiltroFecha { get; set; }
+
+    public string Criterio { get; set; }
+
+    protected override void OnInitialized()
+    {
+
+        Nuevo();
+
+    }
+
+
+    @************************************************************************NUEVO************************************************************************@
+
+    private void Nuevo()
+    {
+        CobroList = new List<Cobros>();
+        Filtro = "0";
+        Criterio = string.Empty;
+    }
+
+    @*************************************************************************CONSULTAR***********************************************************************@
+
+    public void Consultar()
+    {
+        int id;
+        int.TryParse(Criterio, out id);
+        switch (Filtro)
+        {
+            case "0": 
+                CobroList = CobrosBLL.GetList(c => true);
+                break;
+            case "1":
+                if (Criterio.Trim().Length > 0)
+                {
+                    try
+                    {
+                        CobroList = CobrosBLL.GetList(c => c.CobroId == id);
+                    }
+                    catch (FormatException)
+                    {
+                        toast.ShowWarning("Ingrese un numero");
+                    }
+                }
+                else
+                {
+                    CobroList = CobrosBLL.GetList(c => true).OrderBy(c => c.CobroId).ToList();
+                }
+                break;
+        }
+
+        switch (FiltroFecha)
+        {
+            case "0": 
+            break;
+        case "1": 
+            CobroList = CobroList.Where(s => s.Fecha >= Desde && s.Fecha <= Hasta).ToList();
+            break;
+
+    }
+
+}
+
+
+
+
+@*************************************************************************ACTUALIZAR***********************************************************************@
+void Actualizar()
+{
+    CobroList = CobrosBLL.GetList(p => true).ToList();
+    Cobros = CobroList;
+}
+
+@*************************************************************************ELIMINAR***********************************************************************@
+
+async Task Eliminar(int id)
+{
+    Nav.ToAbsoluteUri($"RCobros/{id}");
+
+    bool confirmed = await Confirmacion.InvokeAsync<bool>("confirm", "Estas seguro de que deseas eliminar este cobro?");
+    if (confirmed)
+    {
+        bool eliminado;
+        eliminado = CobrosBLL.Eliminar(id);
+
+        if (eliminado)
+        {
+            Actualizar();
+            toast.ShowSuccess("Registro Eliminado exitosamente.");
+        }
+        else
+            toast.ShowError("No fue posible Eliminar este Cobro.");
+        return;
+    }
+    return;
+}
+
+@************************************************************************************************************************************************@
+
+}
