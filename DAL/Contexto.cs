@@ -10,9 +10,14 @@ namespace Raldy_P2_APL2.DAL
     public class Contexto : DbContext
     {
 
+        public DbSet<Clientes> Clientes { get; set; }
+        public DbSet<Ventas> Ventas { get; set; }
+        public DbSet<Cobros> Cobros { get; set; }
 
-
-        
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlite(@"Data Source = Data/Ventas.db");
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,7 +43,6 @@ namespace Raldy_P2_APL2.DAL
             modelBuilder.Entity<Ventas>().HasData(new Ventas() { VentaId = 6, Fecha = new DateTime(2020, 10, 01), ClienteId = 3, Monto = 2900, Balance = 1900 });
 
         }
-
 
 
 
