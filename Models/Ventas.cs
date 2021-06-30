@@ -23,8 +23,12 @@ namespace Raldy_P2_APL2.Models
         public double Cobrado { get; set; }
         public virtual Clientes Clientes { get; set; }
 
-        [ForeignKey("VentaId")]
-        public virtual List<CobrosDetalles> cobrosDetalles { get; set; } = new List<CobrosDetalles>();
+       
+
+
+
+
+
 
     }
 }

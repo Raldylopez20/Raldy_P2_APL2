@@ -17,8 +17,11 @@ namespace Raldy_P2_APL2.Models
         public int ClienteId { get; set; }
         public string Nombres { get; set; }
 
-        [ForeignKey("ClienteId")]
-        public virtual List<Ventas> Ventas { get; set; } = new List<Ventas>();
+        
+
+
+
+
 
     }
 }
